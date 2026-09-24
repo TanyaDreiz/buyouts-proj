@@ -66,9 +66,11 @@ county <- buyouts_cost_filtered[, c("tmk", "year_tce", "total_value", "public_co
 #Apply the capped amount 
 county_capped <- county %>%
   mutate(public_costce_capped = pmin(public_costce_discounted, 779700))
+
 buyouts_cost_filtered <- buyouts_cost_filtered %>%
   mutate(discount_countywide = public_costce / (1.03 ^ (year_tce - 2024)),
          capped_discounted = pmin(discount_countywide, 779700))
+
 #Download dataframes
 write_csv(buyouts_cost_filtered, here("data", "processed", "county_alldata.csv"))
 write_csv(county, here("data", "processed", "county_clean.csv"))

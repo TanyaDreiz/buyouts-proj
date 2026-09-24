@@ -7,6 +7,8 @@ library(tidyverse)
 library(stringr)
 library(ggplot2)
 library(here)
+library(purrr)
+library(tidycensus)
 
 # Disable scientific notation
 options(scipen = 999)
