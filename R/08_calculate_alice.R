@@ -33,31 +33,17 @@ acs_clean <- acs_clean %>%
 #Clean up alice and parcel count join dataframe
 clean_alice <- alice_pct_allcensus[, c("geoid", "tract", "block", "total_hh",
                                        "owner", "alice_pct", "parcel_count")]
-
-#Create new column for percent of owners per CBG
-clean_alice$pct_owner <- clean_alice$owner / clean_alice$total_hh
-
-#Calculate count of homeowners that are in a CE-exposed parcel
-clean_alice$count_ce_owner <- clean_alice$parcel_count * clean_alice$pct_owner
-
-#Calculate count of homeowners exposed to CE that are ALICE
-clean_alice$count_ce_owner_alice <- clean_alice$count_ce_owner * clean_alice$alice_pct
-
-#Calculate percentage of ALICE homeowners per CBG
-clean_alice$pct_alice_hazard_owner <- (clean_alice$count_ce_owner_alice / clean_alice$count_ce_owner) * 100
-
 #double checking easier code
-alice_code_check <- alice_pct_allcensus %>%
+alice_buyout <- clean_alice %>%
   mutate(
     pct_owner = owner / total_hh,
-    total_ce_owner = parcel_count * pct_owner,
-    total_ce_owner_alice = total_ce_owner * alice_pct,
+    total_ce_owner = round(parcel_count * pct_owner, 0),
+    total_ce_owner_alice = round(total_ce_owner * alice_pct, 0),
     pct_alice_hazard_owner = ifelse(
       total_ce_owner == 0,
       NA,
       round((total_ce_owner_alice / total_ce_owner) * 100, 1)
-    ),
-    pct_owner_display = round(pct_owner * 100, 1)
+    )
   )
 
-write.csv(acs_clean, here ("data", "processed", "census_data", "alice_pct_allcensus.csv"))
+write.csv(alice_buyout, here ("data", "processed", "alice", "alice_buyouts.csv"))
