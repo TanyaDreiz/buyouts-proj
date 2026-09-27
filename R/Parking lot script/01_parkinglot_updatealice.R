@@ -124,21 +124,4 @@ income_census <- income_census %>%
 
 #Clean up df a bit
 clean_alice <- income_census[, c("GEOID", "tract", "block_group", "total_hh", "single_pct", "multi_pct",
-                                 "pct_owner", "alice_pct", "alice_count", "parcel_count")]
-#Clean up alice and parcel count join dataframe
-clean_alice <- alice_pct_allcensus[, c("geoid", "tract", "block", "total_hh",
-                                       "owner", "alice_pct", "parcel_count")]
-#double checking easier code
-alice_buyout <- clean_alice %>%
-  mutate(
-    total_ce_owner = round(parcel_count * pct_owner, 0),
-    total_ce_owner_alice = round(total_ce_owner * alice_pct, 0),
-    pct_alice_hazard_owner = ifelse(
-      total_ce_owner == 0,
-      NA,
-      round((total_ce_owner_alice / total_ce_owner) * 100, 1)
-    )
-  )
-
-write.csv(alice_buyout, here ("data", "processed", "alice", "alice_buyouts.csv"))
-
+                                       "pct_owner", "alice_pct", "alice_count", "parcel_count")]
