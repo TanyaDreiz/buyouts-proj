@@ -129,14 +129,26 @@ clean_alice <- income_census[, c("GEOID", "tract", "block_group", "total_hh", "s
 clean_alice <- alice_pct_allcensus[, c("geoid", "tract", "block", "total_hh",
                                        "owner", "alice_pct", "parcel_count")]
 #double checking easier code
-alice_buyout <- clean_alice %>%
+alice_buyouts <- alice_buyouts %>%
   mutate(
     total_ce_owner = round(parcel_count * pct_owner, 0),
     total_ce_owner_alice = round(total_ce_owner * alice_pct, 0),
     pct_alice_hazard_owner = ifelse(
       total_ce_owner == 0,
       NA,
-      round((total_ce_owner_alice / total_ce_owner) * 100, 1)
+      round((total_ce_owner_alice / parcel_count) * 100, 1)
+    )
+  )
+
+alice_buyouts <- alice_buyouts %>%
+  mutate(
+    pct_alice_hazard_owner = if_else(
+      round(parcel_count * pct_owner, 0) == 0,
+      NA_real_,
+      round(
+        round(round(parcel_count * pct_owner, 0) * alice_pct, 0) / parcel_count * 100,
+        1
+      )
     )
   )
 
