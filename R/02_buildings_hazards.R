@@ -13,7 +13,8 @@ colnames(clean_hazards) <- c("tmk", "area", "sa_ce05", "sa_ce11", "sa_ce20", "sa
 #Turn TMK into character
 clean_buildings$tmk <- as.character(clean_buildings$tmk)
 clean_hazards$tmk <- as.character(clean_hazards$tmk)
-
+clean_buildings <- clean_buildings |> 
+  mutate(tmk = as.character(tmk))
 #Merge buildings and hazards together by TMK 
 buildings_hazards <- merge(clean_buildings, clean_hazards, by = "tmk")
 
@@ -38,6 +39,21 @@ assessors_hazards <- assessors_hazards %>%
 #Remove duplicate TMKs
 dedup_buyouts <- assessors_hazards %>%
   distinct(tmk, .keep_all = TRUE)
+
+#Upload buildings count dataset
+buildings_count <- buildings <- read_csv(here("data", "raw", "buildings_count.csv"))
+
+#Clean up dataset
+clean_buildings <- buildings_count[, c("tmk", "Point_Count")]
+colnames(clean_buildings) <- c("tmk", "point_count")
+
+#Merge by TMK 
+dedup_buyouts <- left_join(dedup_buyouts, clean_buildings, by = "tmk")
+
+#Filter those with more than 4 buildings per parcel 
+dedup_buyouts <- dedup_buyouts %>%
+  filter(point_count <= 4)
+
 
 # ---- Save processed data ------------------------------------------
 write_csv(dedup_buyouts, here("data", "processed", "final_buildings_hazards_join.csv"))

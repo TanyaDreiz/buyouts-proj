@@ -1,40 +1,29 @@
-#Upload buildings count dataset
-buildings_count <- buildings <- read_csv(here("data", "raw", "buildings_count.csv"))
-
-#Clean up dataset
-clean_buildings <- buildings_count[, c("tmk", "Point_Count")]
-colnames(clean_buildings) <- c("tmk", "point_count")
-
-#Merge by TMK 
-buyouts_cost <- merge(dedup_buyouts, clean_buildings, by="tmk")
-
 #Calculate land value - land lost to hazard
-years <- c("2024", "2030","2050","2075","2100")  
-hazard_types <- c("ce")
-levels <- c("05", "11", "20", "32")
+level_key <- tibble::tribble(
+  ~year, ~level,
+  2024,  "05",
+  2030,  "05",
+  2050,  "11",
+  2075,  "20",
+  2100,  "32"
+)
+hazard <- "ce"
+levels <- unique(level_key$level)  # "05" "11" "20" "32"
 
 #Loop costs 
 for (level in levels) {
   for (hazard in hazard_types) {
     
-    # Create column names 
+    #Create column names 
     percent_hazard <- paste0("percenthazard_", hazard, level) 
     shape_column_title <- paste0("sa_", hazard, level) 
     land_applied_col <- paste0("land_value_", hazard, level) 
     
     # Create costs calculations
-    buyouts_cost[[percent_hazard]] <- buyouts_cost[[shape_column_title]] / buyouts_cost$area
-    buyouts_cost[[land_applied_col]] <- (1 - round(buyouts_cost[[percent_hazard]], digits = 6)) * buyouts_cost$land_value
+    ce_buyouts[[percent_hazard]] <- ce_buyouts[[shape_column_title]] / ce_buyouts$area
+    ce_buyouts[[land_applied_col]] <- (1 - round(ce_buyouts[[percent_hazard]], digits = 6)) * ce_buyouts$land_value
   }
 }
-
-#Filter those with more than 4 buildings per parcel 
-buyouts_cost <- buyouts_cost %>%
-  filter(point_count <= 4)
-
-#Filter NA values
-buyouts_cost_filtered <- buyouts_cost %>%
-  filter(!(is.na(year_tce)))
 
 #Move year columns closer to front
 buyouts_cost_filtered <- buyouts_cost_filtered %>%
@@ -63,13 +52,19 @@ buyouts_cost_filtered <- buyouts_cost_filtered %>%
 #clean dataframe
 county <- buyouts_cost_filtered[, c("tmk", "year_tce", "total_value", "public_costce_discounted")]
 
-#Apply the capped amount 
-county_capped <- county %>%
-  mutate(public_costce_capped = pmin(public_costce_discounted, 779700))
+#Apply cap and discount rate
+discount_rate <- 0.03
+base_year <- 2024
+cap_2024 <- 779700
 
-buyouts_cost_filtered <- buyouts_cost_filtered %>%
-  mutate(discount_countywide = public_costce / (1.03 ^ (year_tce - 2024)),
-         capped_discounted = pmin(discount_countywide, 779700))
+county_capped_alldata <- county_capped_alldata %>%
+  mutate(
+    years_out = year_tce - 2024,
+    public_costce_disc = public_costce / (1.03 ^ years_out),
+    cap_disc = 779700 / (1.03 ^ years_out),
+    capped_costce = pmin(public_costce_disc, cap_disc)
+  )
+
 
 #Download dataframes
 write_csv(buyouts_cost_filtered, here("data", "processed", "county_alldata.csv"))
