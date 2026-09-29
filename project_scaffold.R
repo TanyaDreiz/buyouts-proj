@@ -5,6 +5,8 @@ install.packages("tidyverse")
 install.packages("sf")
 install.packages("foreign")
 install.packages("stringr")
+install.packages("patchwork")
+install.packages("scales")
 
 library(foreign)
 library(sf)
@@ -13,6 +15,8 @@ library(tidyverse)
 library(stringr)
 library(ggplot2)
 library(here)
+library(patchwork)
+library(scales)
 
 # Disable scientific notation
 options(scipen = 999)
