@@ -12,7 +12,7 @@ levels <- unique(level_key$level)  # "05" "11" "20" "32"
 
 #Loop costs 
 for (level in levels) {
-  for (hazard in hazard_types) {
+  for (hazard in hazard) {
     
     #Create column names 
     percent_hazard <- paste0("percenthazard_", hazard, level) 
@@ -26,15 +26,15 @@ for (level in levels) {
 }
 
 #Move year columns closer to front
-buyouts_cost_filtered <- buyouts_cost_filtered %>%
+ce_buyouts <- ce_buyouts %>%
   select(1, year_tce, everything())
 
 #Rename landvalue cols 
-buyouts_cost_filtered <- buyouts_cost_filtered %>%
+ce_buyouts <- ce_buyouts %>%
   rename_with(~ gsub("land_value_", "landvalue_", .x), starts_with("land_value_"))
 
 #Calculate public costs based on time and hazard
-buyouts_cost_filtered <- buyouts_cost_filtered %>%
+ce_buyouts <- ce_buyouts %>%
   mutate(
     public_costce = case_when(
       year_tce == 2024 ~ building_value + landvalue_ce05,
@@ -46,25 +46,24 @@ buyouts_cost_filtered <- buyouts_cost_filtered %>%
     ))
 
 #add discount rate
-buyouts_cost_filtered <- buyouts_cost_filtered %>%
+ce_buyouts <- ce_buyouts %>%
   mutate(public_costce_discounted = public_costce / (1.03 ^ (year_tce - 2024)))
 
 #clean dataframe
-county <- buyouts_cost_filtered[, c("tmk", "year_tce", "total_value", "public_costce_discounted")]
+county <- ce_buyouts[, c("tmk", "year_tce", "total_value", "public_costce", "public_costce_discounted")]
 
-#Apply cap and discount rate
+#Apply cap
 discount_rate <- 0.03
-base_year <- 2024
-cap_2024 <- 779700
+base_year     <- 2024
+cap           <- 779700
 
-county_capped_alldata <- county_capped_alldata %>%
+county_capped <- county %>%
   mutate(
-    years_out = year_tce - 2024,
-    public_costce_disc = public_costce / (1.03 ^ years_out),
-    cap_disc = 779700 / (1.03 ^ years_out),
-    capped_costce = pmin(public_costce_disc, cap_disc)
+    capped          = pmin(public_costce, cap),
+    capped          = pmax(capped, 0),
+    years_out       = year_tce - base_year,
+    capped_discount = capped / (1 + discount_rate)^years_out
   )
-
 
 #Download dataframes
 write_csv(buyouts_cost_filtered, here("data", "processed", "county_alldata.csv"))
