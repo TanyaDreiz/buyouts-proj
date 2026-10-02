@@ -48,7 +48,11 @@ clean_buildings <- buildings_count[, c("tmk", "Point_Count")]
 colnames(clean_buildings) <- c("tmk", "point_count")
 
 #Merge by TMK 
-dedup_buyouts <- left_join(dedup_buyouts, clean_buildings, by = "tmk")
+dedup_buyouts <- left_join(
+  dedup_buyouts,
+  clean_buildings |> mutate(tmk = as.character(tmk)),
+  by = "tmk"
+)
 
 #Filter those with more than 4 buildings per parcel 
 dedup_buyouts <- dedup_buyouts %>%
